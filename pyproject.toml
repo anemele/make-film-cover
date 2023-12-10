@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "make-film-cover"
+version = "0.1.0"
+description = ""
+authors = ["Jason Swift <anemele@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pillow = "^10.1.0"
+pywin32 = "306"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
