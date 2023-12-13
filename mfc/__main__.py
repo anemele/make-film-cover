@@ -3,16 +3,13 @@
 import argparse
 import glob
 import os.path
-import sys
 from itertools import chain
 
 from .consts import FILTER_DB, FILTER_ENCODING
 from .core import make_cover
 from .log import logger
 
-parser = argparse.ArgumentParser(
-    prog=__package__ if len(sys.argv) == 1 else sys.argv[1], description=__doc__
-)
+parser = argparse.ArgumentParser(prog=__package__, description=__doc__)
 parser.add_argument('film', nargs='+', type=str, help='Film path')
 parser.add_argument(
     '--debug',
@@ -29,7 +26,7 @@ parser.add_argument(
     action='store_true',
     help='Rebuild the filter file.',
 )
-args = parser.parse_args(sys.argv[2:])
+args = parser.parse_args()
 
 
 args_film: list[str] = args.film

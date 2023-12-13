@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "make-film-cover"
+name = "mfc"
 version = "0.1.0"
 description = ""
 authors = ["Jason Swift <anemele@outlook.com>"]
