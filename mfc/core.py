@@ -7,14 +7,18 @@ import win32con
 from PIL import Image, UnidentifiedImageError
 
 from .consts import COVER_PATH, ICON_PATH, ICON_SIZE, ICON_SIZE_TUPLE
+from .log import logger
 
 
-def square_image(file: str, max_size: int = ICON_SIZE) -> Image.Image:
+def square_image(file: str) -> Image.Image:
     input_image = Image.open(file)
-    if (rate := max_size / max(input_image.size)) < 1:
+    m = ICON_SIZE
+
+    if (rate := m / max(input_image.size)) < 1:
         w, h = input_image.size
-        input_image = input_image.resize((round(w * rate), round(h * rate)))
-    m = max_size
+        size = (round(w * rate), round(h * rate))
+        input_image = input_image.resize(size)
+
     w, h = input_image.size
     padding_w = (m - w) >> 1
     padding_h = (m - h) >> 1
@@ -33,20 +37,21 @@ def square_image(file: str, max_size: int = ICON_SIZE) -> Image.Image:
 
 
 def make_icon(film_path: str) -> None:
-    match = glob.iglob(f'{os.path.join(film_path, COVER_PATH)}.*')
+    match = glob.iglob(f'{film_path}/{COVER_PATH}.*')
     # 此处尝试每一个匹配，如果成功则结束，否则认为不存在，抛出 StopIteration
     for img_path in match:
-        ico_path = os.path.join(film_path, f'{ICON_PATH}.ico')
         try:
-            sqr_img = square_image(img_path, ICON_SIZE)
+            sqr_img = square_image(img_path)
         except UnidentifiedImageError:
             continue
-        sqr_img.save(ico_path, sizes=ICON_SIZE_TUPLE)
-        # 设置隐藏属性
-        # win32api.SetFileAttributes(ico_path, win32con.FILE_ATTRIBUTE_HIDDEN)
         break
     else:
         raise StopIteration
+
+    ico_path = os.path.join(film_path, f'{ICON_PATH}.ico')
+    sqr_img.save(ico_path, sizes=ICON_SIZE_TUPLE)
+    # 设置隐藏属性
+    # win32api.SetFileAttributes(ico_path, win32con.FILE_ATTRIBUTE_HIDDEN)
 
 
 def write_ini(film_path: str) -> None:
@@ -67,7 +72,7 @@ def make_cover(film_path: str) -> Optional[str]:
     try:
         make_icon(film_path)
     except StopIteration:
-        print(f'[ERROR] No {COVER_PATH}.* file found in {film_path}')
+        logger.error(f'no {COVER_PATH}.* file found in {film_path}')
         return
     # step 2: desktop.ini
     write_ini(film_path)
