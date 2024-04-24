@@ -11,7 +11,7 @@ which are to change the appearance of the folder.
 ```text
 film
   |-cover.jpg
-  |-cover.ico (hidden)
+  |-icon.ico (hidden)
   |-desktop.ini (hidden)
 ```
 
