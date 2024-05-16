@@ -4,8 +4,6 @@ mod fs;
 mod img;
 mod utils;
 
-use std::path::PathBuf;
-
 use clap::Parser;
 
 use cli::Args;
@@ -18,14 +16,13 @@ fn main() {
     let args = Args::parse();
     // dbg!(&args);
 
-    let paths: Vec<PathBuf> = args
+    let paths = args
         .path
         .iter()
         .filter_map(|p| glob(&p).ok())
         .flatten()
         .filter_map(|p| p.ok())
-        .filter(|p| p.is_dir())
-        .collect();
+        .filter(|p| p.is_dir());
     // dbg!(&paths);
 
     for path in paths {
