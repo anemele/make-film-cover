@@ -1,16 +1,31 @@
-mod cli;
 mod consts;
 mod fs;
 mod img;
-mod utils;
+
+use std::path::Path;
 
 use clap::Parser;
 
-use cli::Args;
-use fs::{set_attr_readonly, write_desktop_ini};
-use glob::glob;
-use img::make_icon;
-use utils::find_image_file;
+fn run(path: impl AsRef<Path>) -> anyhow::Result<()> {
+    let path = path.as_ref();
+    let img_path = fs::find_image_file(path)
+        .ok_or_else(|| anyhow::anyhow!("{}: not found `cover.*`", path.display()))?;
+    img::make_icon(img_path)?;
+    fs::write_desktop_ini(path)
+        .map(|_| anyhow::anyhow!("{}: failed to write `desktop.ini`", path.display()))?;
+    fs::set_attr_readonly(path)
+        .map(|_| anyhow::anyhow!("{}: failed to set attribute `readonly`", path.display()))?;
+    Ok(())
+}
+
+/// make film folder cover for Windows explorer
+#[derive(Parser, Debug)]
+#[clap(version)]
+struct Args {
+    /// film folder path, with image file named `cover.*` in it
+    #[clap(required = true)]
+    pub path: Vec<String>,
+}
 
 fn main() {
     let args = Args::parse();
@@ -19,28 +34,15 @@ fn main() {
     let paths = args
         .path
         .iter()
-        .filter_map(|p| glob(&p).ok())
+        .filter_map(|p| glob::glob(p).ok())
         .flatten()
         .filter_map(|p| p.ok())
         .filter(|p| p.is_dir());
     // dbg!(&paths);
 
     for path in paths {
-        let Some(img_path) = find_image_file(&path) else {
-            eprintln!("{}: not found `cover.*`", path.display());
-            continue;
-        };
-        if let Err(e) = make_icon(&img_path) {
-            eprintln!("{}: {}", path.display(), e);
-            continue;
-        }
-        if !write_desktop_ini(&path).is_ok_and(|x| x) {
-            eprintln!("{}: failed to write `desktop.ini`", path.display());
-            continue;
-        }
-        if !set_attr_readonly(&path).is_ok_and(|x| x) {
-            eprintln!("{}: failed to set attribute `readonly`", path.display());
-            continue;
+        if let Err(e) = run(&path) {
+            eprintln!("{}", e);
         }
     }
 }

@@ -1,10 +1,8 @@
-use std::io;
 use std::path::Path;
-use std::process::Command;
 
 use image::imageops::resize;
 use image::imageops::FilterType;
-use image::io::Reader as ImReader;
+use image::io::Reader;
 use image::GenericImageView;
 use image::ImageBuffer;
 use image::ImageFormat;
@@ -12,19 +10,12 @@ use image::Rgba;
 use image::RgbaImage;
 
 use crate::consts::ICON_FILE_NAME;
+use crate::fs::set_attr_hidden;
 
 type SquaredPng = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
-fn sqr_png(path: impl AsRef<Path>) -> io::Result<SquaredPng> {
-    let Ok(img) = ImReader::open(&path)?.decode() else {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!(
-                "failed to decode image.\nmaybe `{}` has a wrong extension?",
-                path.as_ref().display()
-            ),
-        ));
-    };
+fn sqr_png(path: impl AsRef<Path>) -> anyhow::Result<SquaredPng> {
+    let img = Reader::open(path)?.decode()?;
 
     let (w, h) = img.dimensions();
     let size = w.max(h);
@@ -44,16 +35,11 @@ fn sqr_png(path: impl AsRef<Path>) -> io::Result<SquaredPng> {
     Ok(x256)
 }
 
-pub fn make_icon(path: impl AsRef<Path>) -> io::Result<bool> {
+pub fn make_icon(path: impl AsRef<Path>) -> anyhow::Result<()> {
     let png = sqr_png(&path)?;
 
     let new_path = path.as_ref().with_file_name(ICON_FILE_NAME);
 
-    let ok1 = png.save_with_format(&new_path, ImageFormat::Ico).is_ok();
-    let ok2 = Command::new("attrib.exe")
-        .arg("+h")
-        .arg(new_path)
-        .status()?
-        .success();
-    Ok(ok1 && ok2)
+    png.save_with_format(&new_path, ImageFormat::Ico)?;
+    set_attr_hidden(new_path)
 }
